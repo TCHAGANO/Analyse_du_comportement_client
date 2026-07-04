@@ -1,0 +1,166 @@
+# 📊 Analyse du comportement des clients - Dataset iFood
+
+## 📖 Présentation
+
+Ce projet a été réalisé dans le cadre de mon Master en Data Science à l'Université d'Angers.
+
+L'objectif est d'analyser les données marketing d'iFood afin de mieux comprendre le comportement des clients et de construire des modèles capables de prédire leurs dépenses.
+
+Ce projet met en œuvre une démarche complète de Data Mining, depuis l'exploration des données jusqu'à l'évaluation de plusieurs modèles prédictifs.
+
+---
+
+# 🎯 Objectifs
+
+Les principaux objectifs sont :
+
+- Comprendre le profil des clients.
+- Identifier les facteurs qui influencent les dépenses.
+- Mettre en évidence différents profils de consommateurs.
+- Construire plusieurs modèles de prédiction.
+- Comparer les performances des modèles.
+
+---
+
+# 📂 Structure du projet
+
+```
+.
+├── codeRProjet.Rmd      # Analyse complète en R Markdown
+├── Rapport final.pdf    # Rapport détaillé du projet
+├── Image/               # Graphiques et visualisations
+└── README.md
+```
+
+---
+
+# 📊 Jeu de données
+
+Le projet utilise le **jeu de données marketing iFood**.
+
+Les données contiennent notamment :
+
+- les informations des clients ;
+- le niveau de revenu ;
+- l'âge ;
+- le niveau d'éducation ;
+- la situation familiale ;
+- l'historique des achats ;
+- les dépenses réalisées ;
+- les réponses aux campagnes marketing.
+
+---
+
+# 🛠️ Méthodologie
+
+Le projet suit les principales étapes d'un projet de Data Mining.
+
+## 1. Préparation des données
+
+- nettoyage des données ;
+- traitement des valeurs manquantes ;
+- sélection des variables utiles.
+
+## 2. Analyse exploratoire
+
+Étude des données afin de mieux comprendre :
+
+- la répartition des variables ;
+- les relations entre les variables ;
+- le profil des clients.
+
+## 3. Analyses multidimensionnelles
+
+Deux méthodes ont été utilisées :
+
+- **Analyse en Composantes Principales (ACP)**
+- **Analyse des Correspondances Multiples (ACM)**
+
+Ces méthodes permettent de mieux visualiser les données et d'identifier différents profils de clients.
+
+## 4. Modélisation prédictive
+
+Plusieurs modèles ont été construits et comparés :
+
+- Régression Linéaire Multiple
+- Régression sur Composantes Principales (PCR)
+- Moindres Carrés Partiels (PLS)
+
+---
+
+# 📈 Évaluation des modèles
+
+Les modèles ont été comparés à l'aide de plusieurs indicateurs :
+
+- RMSE (erreur de prédiction)
+- R² (qualité du modèle)
+
+Cette comparaison permet d'identifier le modèle offrant les meilleures performances.
+
+---
+
+# ✅ Résultats
+
+Cette étude a permis de :
+
+- mieux comprendre le comportement des clients ;
+- identifier les variables les plus importantes dans les dépenses ;
+- mettre en évidence plusieurs profils de consommateurs ;
+- comparer plusieurs méthodes de prédiction.
+
+---
+
+# 💻 Technologies utilisées
+
+- R
+- R Markdown
+- FactoMineR
+- factoextra
+- ggplot2
+- dplyr
+- pls
+
+---
+
+# 📸 Quelques illustrations
+
+Le dossier **Image/** contient plusieurs visualisations réalisées durant l'étude :
+
+- Analyse en Composantes Principales (ACP)
+- Analyse des Correspondances Multiples (ACM)
+- Comparaison des performances des modèles
+- Graphiques descriptifs
+
+---
+
+# 🚀 Améliorations possibles
+
+Quelques pistes pour aller plus loin :
+
+- Ajouter des modèles de Machine Learning (Random Forest, XGBoost).
+- Réaliser une segmentation automatique des clients.
+- Développer un tableau de bord interactif avec Streamlit ou Shiny.
+
+---
+
+# 👨‍🎓 Auteurs
+
+**Bahissou TCHAGNAO**
+**Abdou WADE**
+
+Étudiants en Master Data Science  
+Université d'Angers
+
+**Domaines d'intérêt :**
+
+- Intelligence Artificielle
+- Data Science
+- Data Mining
+- Machine Learning
+- Business Intelligence
+- Visualisation de données
+
+---
+
+Merci d'avoir consulté ce projet.
+N'hésitez pas à parcourir le rapport ainsi que le code pour découvrir l'ensemble de l'étude.

@@ -1,0 +1,651 @@
+---
+title: "Untitled"
+author: "Bahissou TCHAGNAO"
+date: "2026-05-15"
+output: html_document
+---
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+library(dplyr)
+library(tidyr)
+library(MASS)
+library(pls)
+library(caret)
+library(corrplot)
+```
+
+
+
+```{r setup, include=FALSE}
+data_brut <- read.csv("C:/Users/Bahissou TCHAGNAO/Downloads/archive(128)/ifood_df.csv", sep = ",")
+
+```
+
+Renommage des colonnes en français 
+
+```{r}
+
+
+data_brut <- data_brut %>%
+  rename(
+    Revenu_annuel_client = Income,
+    nb_petits_enfants = Kidhome,
+    nb_adolescents = Teenhome,
+    nb_jours_depuis_dernier_achat = Recency,
+
+    Montant_Vins = MntWines,
+    Montant_Fruits = MntFruits,
+    Montant_Produits_Viande = MntMeatProducts,
+    Montant_Produits_Poisson = MntFishProducts,
+    Montant_Produits_Sucres = MntSweetProducts,
+    Montant_Produits_Premium = MntGoldProds,
+
+    Nb_Achats_Promotions = NumDealsPurchases,
+    Nb_Achats_Web = NumWebPurchases,
+    Nb_Achats_Catalogue = NumCatalogPurchases,
+    Nb_Achats_Magasin = NumStorePurchases,
+    Nb_Visites_Web_Mois = NumWebVisitsMonth,
+
+    Campagne3_Acceptee = AcceptedCmp3,
+    Campagne4_Acceptee = AcceptedCmp4,
+    Campagne5_Acceptee = AcceptedCmp5,
+    Campagne1_Acceptee = AcceptedCmp1,
+    Campagne2_Acceptee = AcceptedCmp2,
+
+    Reclamation = Complain,
+
+    Cout_Contact = Z_CostContact,
+    Revenu_Contact = Z_Revenue,
+    Reponse_Campagne = Response,
+
+    Age_Client = Age,
+    Anciennetee = Customer_Days,
+
+    Statut_Divorce = marital_Divorced,
+    Statut_Marie = marital_Married,
+    Statut_Celibataire = marital_Single,
+    Statut_En_Couple = marital_Together,
+    Statut_Veuf = marital_Widow,
+
+    Education_Deuxieme_Cycle = `education_2n.Cycle`,
+    Education_Basique = education_Basic,
+    Education_Diplome = education_Graduation,
+    Education_Master = education_Master,
+    Education_Doctorat = education_PhD,
+
+    Depense_Total = MntTotal,
+    Depense_hors_produits_premiums = MntRegularProds,
+    Total_Campagnes_Acceptees = AcceptedCmpOverall
+  )
+
+
+```
+
+
+```{r}
+## --- PARTIE 2 : MUTATE (création des facteurs) ---
+# CORRECTION : Utiliser data_brut au lieu de data_clean
+data_clean <- data_brut %>%
+  mutate(
+    
+      statut_marital = case_when(
+      Statut_Divorce == 1 ~ "Divorce",
+      Statut_Marie == 1 ~ "Marie",
+      Statut_Celibataire == 1 ~ "Celibataire",
+      Statut_En_Couple == 1 ~ "En couple",
+      Statut_Veuf == 1 ~ "Veuf",
+      TRUE ~ "Autre"
+                                ),
+       niveau_education = case_when(
+      Education_Deuxieme_Cycle == 1 ~ "Lycee",
+      Education_Basique == 1 ~ "College",
+      Education_Diplome == 1 ~ "Licence",
+      Education_Master == 1 ~ "Master",
+      Education_Doctorat == 1 ~ "Doctorat",
+      TRUE ~ "Autre"
+    )
+  ) %>%
+  
+  mutate(
+    statut_marital   = factor(statut_marital),
+    niveau_education = factor(niveau_education),
+    Campagne1_Acceptee = factor(ifelse(Campagne1_Acceptee == 1, "C1_Oui", "C1_Non")),
+    Campagne2_Acceptee = factor(ifelse(Campagne2_Acceptee == 1, "C2_Oui", "C2_Non")),
+    Campagne3_Acceptee = factor(ifelse(Campagne3_Acceptee == 1, "C3_Oui", "C3_Non")),
+    Campagne4_Acceptee = factor(ifelse(Campagne4_Acceptee == 1, "C4_Oui", "C4_Non")),
+    Campagne5_Acceptee = factor(ifelse(Campagne5_Acceptee == 1, "C5_Oui", "C5_Non")),
+    Reclamation        = factor(ifelse(Reclamation == 1, "Rec_Oui", "Rec_Non"))
+  )
+
+```
+
+SUPPRESSION DES COLONNES REDONDANTES
+
+```{r}
+
+data <- data_clean %>%
+  dplyr::select(
+    -Cout_Contact,
+    -Revenu_Contact,
+    -Reponse_Campagne,
+    -Statut_Divorce,
+    -Statut_Marie,
+    -Statut_Celibataire,
+    -Statut_En_Couple,
+    -Statut_Veuf,
+    -Education_Deuxieme_Cycle,
+    -Education_Basique,
+    -Education_Diplome,
+    -Education_Master,
+    -Education_Doctorat
+  )
+
+
+```
+TYPAGES DES COLONNES NUMÉRIQUES 
+
+```{r}
+num_var <- c(
+  "Montant_Vins",
+  "Montant_Fruits",
+  "Montant_Produits_Viande",
+  "Montant_Produits_Poisson",
+  "Montant_Produits_Sucres",
+  "Montant_Produits_Premium", # <-- CORRECTION ICI
+  "Depense_Total",
+  "Depense_hors_produits_premiums"
+)
+
+data[, num_var] <- lapply(data[, num_var], as.numeric)
+```
+
+
+```{r}
+summary(data)
+```
+```{r}
+par(mfrow= c(1,1))
+
+hist(data$Depense_Total)
+hist(data$Revenu_annuel_client)
+```
+```{r}
+par(mfrow=c(2,2))
+library(ggplot2)
+library(gridExtra)
+
+# Histogramme Revenu annuel
+h1 <- ggplot(data, aes(x = Revenu_annuel_client)) +
+  geom_histogram(
+    bins = 30,
+    fill = "#2C3E50",     # bleu académique
+    color = "white",
+    linewidth = 0.3
+  ) +
+  labs(
+    title = "Distribution du revenu annuel des clients",
+    x = "Revenu annuel",
+    y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
+
+# Histogramme Dépenses totales
+h2 <- ggplot(data, aes(x = Depense_Total)) +
+  geom_histogram(
+    bins = 30,
+    fill = "#34495E",     # gris bleu premium
+    color = "white",
+    linewidth = 0.3
+  ) +
+  labs(
+    title = "Distribution des dépenses totales",
+    x = "Dépense totale",
+    y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
+
+grid.arrange(h1, h2, ncol = 2)
+```
+
+
+
+
+
+```{r}
+# Histogramme : Dépense totale
+
+p2 <- ggplot(data, aes(x = Depense_Total)) +
+
+  geom_histogram(
+    bins = 30,
+    fill = "#6A994E",     # vert sobre premium
+    color = "white",
+    linewidth = 0.4
+  ) +
+
+  geom_density(
+    aes(y = after_stat(count*250)),
+    color = "#9D0208",
+    linewidth = 1
+  ) +
+
+  labs(
+    title = "Distribution des dépenses totales",
+    subtitle = "Répartition des montants dépensés",
+    x = "Dépense totale",
+    y = "Effectif"
+  ) +
+
+  theme_classic(base_size = 14) +
+
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      face = "italic"
+    )
+  )
+
+p2
+
+# Sauvegarde image
+ggsave(
+  "Histogramme_Depenses.png",
+  p2,
+  width = 9,
+  height = 6,
+  dpi = 300
+)
+```
+
+
+
+
+```{r}
+
+vars_quanti <- c("Revenu_annuel_client",
+                 "nb_petits_enfants", 
+                 "nb_adolescents", 
+                 "nb_jours_depuis_dernier_achat",
+                 "Montant_Vins", 
+                 "Montant_Fruits", 
+                 "Montant_Produits_Viande", 
+                 "Montant_Produits_Poisson", 
+                 "Montant_Produits_Sucres", 
+                 "Montant_Produits_Premium", 
+                 "Nb_Achats_Promotions",
+                 "Nb_Achats_Web", 
+                 "Nb_Achats_Catalogue", 
+                 "Nb_Achats_Magasin", 
+                 "Nb_Visites_Web_Mois",
+                 "Age_Client", 
+                 "Anciennetee",
+                 "Depense_hors_produits_premiums",
+                 "Total_Campagnes_Acceptees")
+
+vars_quali <- c("Campagne3_Acceptee", 
+                "Campagne4_Acceptee", 
+                "Campagne5_Acceptee", 
+                "Campagne1_Acceptee",
+                "Campagne2_Acceptee",
+                "Reclamation", 
+                "statut_marital",
+                "niveau_education")
+```
+
+ON  RÉALISE ACP  SUR DES  VARIABLES NUMÉRIQUES 
+
+```{r}
+res_acp <- PCA(data[, vars_quanti], graph = FALSE)
+
+res_acp$eig
+```
+
+```{r}
+corrplot(res_acp$var$contrib, is.corr= FALSE)
+```
+
+```{r}
+fviz_eig(res_acp, addlabels = TRUE, ylim = c(0, 50))
+
+# Cercle des corrélations 
+# Afficher uniquement les variables avec un cos2 > 0.5
+fviz_pca_var(res_acp, 
+             select.var = list(cos2 = 0.5), # Filtre ici
+             col.var = "cos2",              # Colore les flèches selon leur qualité
+             gradient.cols = c("black", "#E7B800", "#FC4E07"), 
+             repel = TRUE)
+```
+
+
+```{r}
+fviz_pca_ind(res_acp, col.ind= "red") 
+fviz_pca_biplot(res_acp, col.var="blue", col.ind="red")
+# Extraire les cos²
+cos2 <- get_pca_var(res_acp)$cos2
+
+# cos² cumulé Dim1 + Dim2
+cos2_total <- rowSums(cos2[,1:2])
+
+# Indices des variables bien représentées
+ind <- which(cos2_total > 0.5)
+
+# Cercle des corrélations
+fviz_pca_var(
+  res_acp,
+  select.var = list(name = rownames(cos2)[ind]),
+  col.var = "cos2",
+  gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+  repel = TRUE
+)
+```
+
+
+On réalise  ACM sur  les variables qualitatives afin de voir les associations
+
+```{r}
+
+
+quali_var <- data[, c("niveau_education", "statut_marital", 
+                      "Campagne1_Acceptee", "Campagne2_Acceptee", 
+                      "Campagne3_Acceptee", "Campagne4_Acceptee", 
+                      "Campagne5_Acceptee",  "Reclamation")]
+
+res.mca <- MCA(quali_var, graph = FALSE)
+
+fviz_mca_var(res.mca, repel = TRUE, 
+             col.var = "contrib", # Couleur selon la contribution
+             gradient.cols = c("black", "#E7B800", "#FC4E07"),
+             title = "Cartographie des profils clients (ACM)")
+```
+
+
+
+
+```{r}
+modele_final <- lm(
+Montant_Vins~
+Revenu_annuel_client+
+Anciennetee+
+nb_petits_enfants+
+nb_adolescents+
+Nb_Achats_Web+
+Nb_Achats_Catalogue+
+Nb_Achats_Magasin+
+Nb_Visites_Web_Mois+
+niveau_education,
+data=data
+)
+
+summary(modele_final)
+par(mfrow=c(2,2))
+plot(modele_final)
+
+```
+
+```{r}
+vars <- data[,c(
+"Revenu_annuel_client",
+"Anciennetee",
+"nb_petits_enfants",
+"nb_adolescents",
+"Nb_Achats_Web",
+"Nb_Achats_Catalogue",
+"Nb_Achats_Magasin",
+"Nb_Visites_Web_Mois",
+"Montant_Vins"
+)]
+
+```
+
+
+```{r}
+library(pls)
+
+modele_pcr <- pcr(
+Montant_Vins~
+Revenu_annuel_client+
+Anciennetee+
+nb_petits_enfants+
+nb_adolescents+
+Nb_Achats_Web+
+Nb_Achats_Catalogue+
+Nb_Achats_Magasin+
+Nb_Visites_Web_Mois,
+
+data=vars,
+scale=TRUE,
+validation="CV"
+)
+
+summary(modele_pcr)
+coef(modele_pcr)
+
+```
+
+```{r}
+
+validationplot(
+modele_pcr,
+val.type="RMSEP"
+)
+```
+
+```{r}
+pred_pcr <- predict(
+modele_pcr,
+ncomp=3
+)
+
+
+
+```
+
+```{r}
+library(caret)
+
+RMSE(
+pred_pcr,
+data$Montant_Vins
+)
+```
+```{r}
+modele_pls <- plsr(
+Montant_Vins~
+Revenu_annuel_client+
+Anciennetee+
+nb_petits_enfants+
+nb_adolescents+
+Nb_Achats_Web+
+Nb_Achats_Catalogue+
+Nb_Achats_Magasin+
+Nb_Visites_Web_Mois,
+
+data=vars,
+scale=TRUE,
+validation="CV"
+)
+```
+
+```{r}
+summary(modele_pls)
+```
+```{r}
+validationplot(
+modele_pls,
+val.type="RMSEP"
+)
+```
+
+
+
+```{r}
+pred_pls <- predict(
+modele_pls,
+ncomp=3
+)
+```
+
+```{r}
+RMSE(
+pred_pls,
+data$Montant_Vins
+)
+```
+```{r}
+mean(data[,5])
+
+```
+
+```{r}
+
+
+
+p <- fviz_pca_biplot(res_acp)
+
+ggsave(
+  filename = "ACP_biplot.png",
+  plot = p,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+
+```
+
+```{r}
+png(
+"C:/Users/Bahissou TCHAGNAO/Desktop/MES COURS DS/Datamining2/RMSE_PCR.png",
+width=1200,
+height=800,
+res=150
+)
+
+validationplot(
+modele_pcr,
+val.type="RMSEP"
+)
+
+dev.off()
+```
+```{r}
+pdf(
+"C:/Users/Bahissou TCHAGNAO/Desktop/MES COURS DS/Datamining2/GRAPHIQUE/Tous_graphiques.pdf",
+width=12,
+height=8
+)
+
+# Valeurs propres ACP
+fviz_eig(res_acp, addlabels=TRUE, ylim=c(0,50))
+
+# Cercle corrélations ACP
+fviz_pca_var(
+res_acp,
+select.var=list(cos2=0.5),
+col.var="cos2",
+gradient.cols=c("black","#E7B800","#FC4E07"),
+repel=TRUE
+)
+
+# Contributions
+corrplot(
+res_acp$var$contrib,
+is.corr=FALSE
+)
+
+# Histogramme revenu
+hist(data$Revenu_annuel_client)
+
+# Histogramme dépenses
+#hist(Depense_Total)
+
+# Individus ACP
+fviz_pca_ind(
+res_acp,
+col.ind="red"
+)
+
+# Biplot ACP
+fviz_pca_biplot(
+res_acp,
+col.var="blue",
+col.ind="red"
+)
+
+# ACM
+fviz_mca_var(
+res.mca,
+repel=TRUE,
+col.var="contrib",
+gradient.cols=c("black","#E7B800","#FC4E07"),
+title="Cartographie des profils clients"
+)
+
+# Diagnostics régression
+par(mfrow=c(2,2))
+plot(modele_final)
+
+# Retour normal
+par(mfrow=c(1,1))
+
+# PCR
+validationplot(
+modele_pcr,
+val.type="RMSEP"
+)
+
+# PLS
+validationplot(
+modele_pls,
+val.type="RMSEP"
+)
+
+dev.off()
+```
+```{r}
+library(car)
+
+vif(modele_final)
+```
+
+```{r}
+table(data$Campagne4_Acceptee)
+```
+
+
+```{r}
+
+summary(data)
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
